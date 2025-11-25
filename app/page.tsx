@@ -8,6 +8,8 @@ import TicketToolbar from "@/components/Tickets/TicketToolbar";
 import CreateTicketForm from "@/components/Tickets/CreateTicketForm";
 import NotificationToast from "@/components/ui/NotificationToast";
 import { useTickets } from "@/hooks/useTickets";
+import { useToast } from "@/hooks/useToast";
+import type { TicketPriority, TicketStatus } from "@/types";
 
 export default function Home() {
   const {
@@ -40,11 +42,30 @@ export default function Home() {
     openNewTicketModal,
     closeNewTicketModal,
     createTicket,
-    toastMessage,
-    dismissToast,
     handleTagShortcut,
     openCount,
   } = useTickets();
+  const { message: toastMessage, pushToast, dismissToast } = useToast();
+
+  const handleStatusChange = (id: string, status: TicketStatus) => {
+    updateTicketStatus(id, status);
+    pushToast(`Status updated to ${status}`);
+  };
+
+  const handlePriorityChange = (id: string, priority: TicketPriority) => {
+    updateTicketPriority(id, priority);
+    pushToast(`Priority updated to ${priority}`);
+  };
+
+  const handleAssigneeChange = (id: string, assignee: string | null) => {
+    updateTicketAssignee(id, assignee);
+    pushToast(assignee ? `Assigned to ${assignee}` : "Ticket unassigned");
+  };
+
+  const handleCreateTicket = (input: Parameters<typeof createTicket>[0]) => {
+    createTicket(input);
+    pushToast("Ticket created successfully");
+  };
 
   const showDetails = Boolean(selectedTicket);
   const hasActiveFilters =
@@ -87,9 +108,9 @@ export default function Home() {
             tickets={tickets}
             teamMembers={teamMembers}
             currentTime={currentTime}
-            onStatusChange={updateTicketStatus}
-            onPriorityChange={updateTicketPriority}
-            onAssigneeChange={updateTicketAssignee}
+            onStatusChange={handleStatusChange}
+            onPriorityChange={handlePriorityChange}
+            onAssigneeChange={handleAssigneeChange}
             onTagClick={handleTagShortcut}
             onOpenDetails={openTicketDetails}
             showClearFilters={hasActiveFilters}
@@ -112,15 +133,15 @@ export default function Home() {
         isOpen={showDetails}
         teamMembers={teamMembers}
         onClose={closeTicketDetails}
-        onStatusChange={updateTicketStatus}
-        onAssigneeChange={updateTicketAssignee}
-        onPriorityChange={updateTicketPriority}
+        onStatusChange={handleStatusChange}
+        onAssigneeChange={handleAssigneeChange}
+        onPriorityChange={handlePriorityChange}
       />
 
       <CreateTicketForm
         isOpen={isModalOpen}
         onClose={closeNewTicketModal}
-        onSubmit={createTicket}
+        onSubmit={handleCreateTicket}
       />
 
       <NotificationToast message={toastMessage} onDismiss={dismissToast} />

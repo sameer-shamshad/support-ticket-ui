@@ -136,7 +136,6 @@ export const useTickets = () => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const filterBadgeCount =
     tagFilters.length + priorityFilters.length + assigneeFilters.length;
@@ -210,18 +209,9 @@ export const useTickets = () => {
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
 
   useEffect(() => {
-    if (!toastMessage) return;
-
-    const timeout = setTimeout(() => setToastMessage(null), 3000);
-    return () => clearTimeout(timeout);
-  }, [toastMessage]);
-
-  useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now()), 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
-  const notify = (message: string) => setToastMessage(message);
 
   const updateTicket = (id: string, updater: (ticket: Ticket) => Ticket) => {
     setTickets((prev) => prev.map((ticket) => (ticket.id === id ? updater(ticket) : ticket)));
@@ -229,17 +219,14 @@ export const useTickets = () => {
 
   const updateTicketStatus = (id: string, status: TicketStatus) => {
     updateTicket(id, (ticket) => ({ ...ticket, status }));
-    notify(`Status updated to ${status}`);
   };
 
   const updateTicketPriority = (id: string, priority: TicketPriority) => {
     updateTicket(id, (ticket) => ({ ...ticket, priority }));
-    notify(`Priority updated to ${priority}`);
   };
 
   const updateTicketAssignee = (id: string, assignee: string | null) => {
     updateTicket(id, (ticket) => ({ ...ticket, assignee }));
-    notify(assignee ? `Assigned to ${assignee}` : "Ticket unassigned");
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -309,7 +296,6 @@ export const useTickets = () => {
     };
 
     setTickets((prev) => [newTicket, ...prev]);
-    notify("Ticket created successfully");
   };
 
   return {
@@ -339,8 +325,6 @@ export const useTickets = () => {
     openNewTicketModal,
     closeNewTicketModal,
     createTicket,
-    toastMessage,
-    dismissToast: () => setToastMessage(null),
     teamMembers: TEAM_MEMBERS,
     tagOptions: TAG_OPTIONS,
     priorityOptions: PRIORITY_OPTIONS,
