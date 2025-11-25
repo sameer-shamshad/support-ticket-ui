@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
 import { SortOption, Ticket, TicketPriority, TicketStatus } from "@/types";
+import { ticketsStore } from "@/store/ticketsStore";
 
 export const TEAM_MEMBERS = [
   "Sarah Johnson",
@@ -33,90 +34,6 @@ const PRIORITY_ORDER: Record<TicketPriority, number> = {
   low: 1,
 };
 
-const INITIAL_TICKETS: Ticket[] = [
-  {
-    id: "T-1024",
-    title: "Login failure on iOS App",
-    status: "queued",
-    priority: "urgent",
-    requester: "John Doe",
-    email: "john@example.com",
-    createdAt: Date.now() - 1000 * 60 * 2,
-    assignee: null,
-    tags: ["Bug", "Mobile"],
-    description:
-      "Users are unable to log in to the iOS application. The login button appears to be non-responsive after entering credentials.",
-    messages: [
-      {
-        sender: "John Doe",
-        time: "2m ago",
-        text: "I cannot log into the iOS app. The button does nothing.",
-      },
-    ],
-  },
-  {
-    id: "T-1023",
-    title: "Refund request for Subscription #990",
-    status: "active",
-    priority: "normal",
-    requester: "Emma Schmidt",
-    email: "emma@example.de",
-    createdAt: Date.now() - 1000 * 60 * 10,
-    assignee: "Sarah Johnson",
-    tags: ["Billing"],
-    description:
-      "Customer requesting a refund for subscription #990 due to billing issues.",
-    messages: [
-      {
-        sender: "Emma Schmidt",
-        time: "15m ago",
-        text: "I was charged twice. Please refund.",
-      },
-    ],
-  },
-  {
-    id: "T-1022",
-    title: "Feature request: Dark Mode",
-    status: "active",
-    priority: "low",
-    requester: "Alex Thompson",
-    email: "alex@example.com",
-    createdAt: Date.now() - 1000 * 60 * 60,
-    assignee: "Mike Chen",
-    tags: ["Feature"],
-    description:
-      "User requesting dark mode support for better usability during nighttime.",
-    messages: [],
-  },
-  {
-    id: "T-1021",
-    title: "How to update profile picture?",
-    status: "ended",
-    priority: "low",
-    requester: "Marie Dubois",
-    email: "marie@example.fr",
-    createdAt: Date.now() - 1000 * 60 * 60 * 2,
-    assignee: "AI Bot",
-    tags: ["Support"],
-    description: "User asking about how to update their profile picture.",
-    messages: [],
-  },
-  {
-    id: "T-1020",
-    title: "Battery draining fast on v2.0",
-    status: "escalated",
-    priority: "critical",
-    requester: "Yuki Tanaka",
-    email: "yuki@example.jp",
-    createdAt: Date.now() - 1000 * 60 * 60 * 24,
-    assignee: "David Park",
-    tags: ["Bug", "Critical"],
-    description:
-      "Multiple reports of excessive battery drainage on version 2.0.",
-    messages: [],
-  },
-];
-
 type NewTicketInput = {
   title: string;
   requester: string;
@@ -126,16 +43,55 @@ type NewTicketInput = {
 };
 
 export const useTickets = () => {
-  const [tickets, setTickets] = useState<Ticket[]>(INITIAL_TICKETS);
-  const [currentTime, setCurrentTime] = useState(() => Date.now());
-  const [statusFilter, setStatusFilter] = useState<TicketStatus | "all">("all");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [tagFilters, setTagFilters] = useState<string[]>([]);
-  const [priorityFilters, setPriorityFilters] = useState<TicketPriority[]>([]);
-  const [assigneeFilters, setAssigneeFilters] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
-  const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const tickets = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getTickets.bind(ticketsStore)
+  );
+  
+  const currentTime = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getCurrentTime.bind(ticketsStore)
+  );
+  
+  const statusFilter = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getStatusFilter.bind(ticketsStore)
+  );
+  
+  const searchTerm = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getSearchTerm.bind(ticketsStore)
+  );
+  
+  const tagFilters = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getTagFilters.bind(ticketsStore)
+  );
+  
+  const priorityFilters = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getPriorityFilters.bind(ticketsStore)
+  );
+  
+  const assigneeFilters = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getAssigneeFilters.bind(ticketsStore)
+  );
+  
+  const sortBy = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getSortBy.bind(ticketsStore)
+  );
+  
+  const selectedTicketId = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getSelectedTicketId.bind(ticketsStore)
+  );
+  
+  const isModalOpen = useSyncExternalStore(
+    ticketsStore.subscribe.bind(ticketsStore),
+    ticketsStore.getIsModalOpen.bind(ticketsStore)
+  );
 
   const filterBadgeCount =
     tagFilters.length + priorityFilters.length + assigneeFilters.length;
@@ -209,12 +165,13 @@ export const useTickets = () => {
     tickets.find((ticket) => ticket.id === selectedTicketId) ?? null;
 
   useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(Date.now()), 60 * 1000);
+    const interval = setInterval(() => ticketsStore.setCurrentTime(Date.now()), 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   const updateTicket = (id: string, updater: (ticket: Ticket) => Ticket) => {
-    setTickets((prev) => prev.map((ticket) => (ticket.id === id ? updater(ticket) : ticket)));
+    const updated = tickets.map((ticket) => (ticket.id === id ? updater(ticket) : ticket));
+    ticketsStore.setTickets(updated);
   };
 
   const updateTicketStatus = (id: string, status: TicketStatus) => {
@@ -230,46 +187,49 @@ export const useTickets = () => {
   };
 
   const toggleTagFilter = (tag: string) => {
-    setTagFilters((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
+    const newFilters = tagFilters.includes(tag)
+      ? tagFilters.filter((t) => t !== tag)
+      : [...tagFilters, tag];
+    ticketsStore.setTagFilters(newFilters);
   };
 
   const togglePriorityFilter = (priority: TicketPriority) => {
-    setPriorityFilters((prev) =>
-      prev.includes(priority)
-        ? prev.filter((p) => p !== priority)
-        : [...prev, priority]
-    );
+    const newFilters = priorityFilters.includes(priority)
+      ? priorityFilters.filter((p) => p !== priority)
+      : [...priorityFilters, priority];
+    ticketsStore.setPriorityFilters(newFilters);
   };
 
   const toggleAssigneeFilter = (assignee: string) => {
-    setAssigneeFilters((prev) =>
-      prev.includes(assignee)
-        ? prev.filter((a) => a !== assignee)
-        : [...prev, assignee]
-    );
+    const newFilters = assigneeFilters.includes(assignee)
+      ? assigneeFilters.filter((a) => a !== assignee)
+      : [...assigneeFilters, assignee];
+    ticketsStore.setAssigneeFilters(newFilters);
   };
 
-  const openTicketDetails = (id: string) => setSelectedTicketId(id);
-  const closeTicketDetails = () => setSelectedTicketId(null);
+  const openTicketDetails = (id: string) => ticketsStore.setSelectedTicketId(id);
+  const closeTicketDetails = () => ticketsStore.setSelectedTicketId(null);
 
-  const openNewTicketModal = () => setIsModalOpen(true);
-  const closeNewTicketModal = () => setIsModalOpen(false);
+  const openNewTicketModal = () => ticketsStore.setIsModalOpen(true);
+  const closeNewTicketModal = () => ticketsStore.setIsModalOpen(false);
 
   const clearAllFilters = () => {
-    setStatusFilter("all");
-    setSearchTerm("");
-    setTagFilters([]);
-    setPriorityFilters([]);
-    setAssigneeFilters([]);
+    ticketsStore.setStatusFilter("all");
+    ticketsStore.setSearchTerm("");
+    ticketsStore.setTagFilters([]);
+    ticketsStore.setPriorityFilters([]);
+    ticketsStore.setAssigneeFilters([]);
   };
 
   const handleTagShortcut = (tag: string) => {
-    setTagFilters((prev) =>
-      prev.includes(tag) ? prev : [...prev, tag]
-    );
+    if (!tagFilters.includes(tag)) {
+      ticketsStore.setTagFilters([...tagFilters, tag]);
+    }
   };
+
+  const setSearchTerm = (term: string) => ticketsStore.setSearchTerm(term);
+  const setStatusFilter = (filter: TicketStatus | "all") => ticketsStore.setStatusFilter(filter);
+  const setSortBy = (sort: SortOption) => ticketsStore.setSortBy(sort);
 
   const createTicket = (input: NewTicketInput) => {
     const currentMax = tickets.reduce((max, ticket) => {
@@ -295,7 +255,7 @@ export const useTickets = () => {
       messages: [],
     };
 
-    setTickets((prev) => [newTicket, ...prev]);
+    ticketsStore.setTickets([newTicket, ...tickets]);
   };
 
   return {

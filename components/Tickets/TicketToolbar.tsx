@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from "react";
-
+import { useTickets } from "@/hooks/useTickets";
 import { SortOption, TicketPriority, TicketStatus } from "@/types";
 
 const STATUS_FILTERS: Array<{ id: TicketStatus | "all"; label: string }> = [
@@ -18,41 +18,24 @@ const SORT_OPTIONS: Array<{ id: SortOption; label: string }> = [
   { id: "priority-low", label: "Priority (Low to High)" },
 ];
 
-type TicketToolbarProps = {
-  statusFilter: TicketStatus | "all";
-  setStatusFilter: (filter: TicketStatus | "all") => void;
-  sortBy: SortOption;
-  setSortBy: (sort: SortOption) => void;
-  tagOptions: readonly string[];
-  tagFilters: string[];
-  toggleTagFilter: (tag: string) => void;
-  priorityOptions: TicketPriority[];
-  priorityFilters: TicketPriority[];
-  togglePriorityFilter: (priority: TicketPriority) => void;
-  teamMembers: readonly string[];
-  assigneeFilters: string[];
-  toggleAssigneeFilter: (assignee: string) => void;
-  filterBadgeCount: number;
-  clearAllFilters: () => void;
-};
-
-const TicketToolbar = ({
-  statusFilter,
-  setStatusFilter,
-  sortBy,
-  setSortBy,
-  tagOptions,
-  tagFilters,
-  toggleTagFilter,
-  priorityOptions,
-  priorityFilters,
-  togglePriorityFilter,
-  teamMembers,
-  assigneeFilters,
-  toggleAssigneeFilter,
-  filterBadgeCount,
-  clearAllFilters,
-}: TicketToolbarProps) => {
+const TicketToolbar = () => {
+  const {
+    statusFilter,
+    setStatusFilter,
+    sortBy,
+    setSortBy,
+    tagOptions,
+    tagFilters,
+    toggleTagFilter,
+    priorityOptions,
+    priorityFilters,
+    togglePriorityFilter,
+    teamMembers,
+    assigneeFilters,
+    toggleAssigneeFilter,
+    filterBadgeCount,
+    clearAllFilters,
+  } = useTickets();
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 

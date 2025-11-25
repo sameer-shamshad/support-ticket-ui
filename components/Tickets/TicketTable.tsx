@@ -1,34 +1,48 @@
+'use client';
 import { formatRelativeTime } from "@/utils/time";
 import TicketStatusSelect from "./TicketStatusSelect";
 import TicketPrioritySelect from "./TicketPrioritySelect";
 import TicketAssigneeSelect from "./TicketAssigneeSelect";
+import { useTickets } from "@/hooks/useTickets";
+import { useToast } from "@/hooks/useToast";
 import { Ticket, TicketPriority, TicketStatus } from "@/types";
 
-type TicketTableProps = {
-  tickets: Ticket[];
-  teamMembers: readonly string[];
-  currentTime: number;
-  onStatusChange: (id: string, status: TicketStatus) => void;
-  onPriorityChange: (id: string, priority: TicketPriority) => void;
-  onAssigneeChange: (id: string, assignee: string | null) => void;
-  onTagClick: (tag: string) => void;
-  onOpenDetails: (id: string) => void;
-  showClearFilters?: boolean;
-  onClearFilters?: () => void;
-};
+const TicketTable = () => {
+  const {
+    tickets,
+    teamMembers,
+    currentTime,
+    updateTicketStatus,
+    updateTicketPriority,
+    updateTicketAssignee,
+    handleTagShortcut,
+    openTicketDetails,
+    searchTerm,
+    statusFilter,
+    filterBadgeCount,
+    clearAllFilters,
+  } = useTickets();
+  const { pushToast } = useToast();
 
-const TicketTable = ({
-  tickets,
-  teamMembers,
-  currentTime,
-  onStatusChange,
-  onPriorityChange,
-  onAssigneeChange,
-  onTagClick,
-  onOpenDetails,
-  showClearFilters,
-  onClearFilters,
-}: TicketTableProps) => {
+  const handleStatusChange = (id: string, status: TicketStatus) => {
+    updateTicketStatus(id, status);
+    pushToast(`Status updated to ${status}`);
+  };
+
+  const handlePriorityChange = (id: string, priority: TicketPriority) => {
+    updateTicketPriority(id, priority);
+    pushToast(`Priority updated to ${priority}`);
+  };
+
+  const handleAssigneeChange = (id: string, assignee: string | null) => {
+    updateTicketAssignee(id, assignee);
+    pushToast(assignee ? `Assigned to ${assignee}` : "Ticket unassigned");
+  };
+
+  const hasActiveFilters =
+    searchTerm.trim().length > 0 ||
+    statusFilter !== "all" ||
+    filterBadgeCount > 0;
   if (tickets.length === 0) {
     return (
       <div className="px-6 py-16">
@@ -42,9 +56,9 @@ const TicketTable = ({
           <p className="text-sm text-gray-500">
             Try adjusting your search or filters
           </p>
-          {showClearFilters && onClearFilters && (
+          {hasActiveFilters && (
             <button
-              onClick={onClearFilters}
+              onClick={clearAllFilters}
               className="mt-4 text-xs text-blue-600 hover:text-blue-700 font-medium"
             >
               Clear all filters
@@ -74,11 +88,11 @@ const TicketTable = ({
             key={ticket.id}
             ticket={ticket}
             teamMembers={teamMembers}
-            onStatusChange={onStatusChange}
-            onPriorityChange={onPriorityChange}
-            onAssigneeChange={onAssigneeChange}
-            onTagClick={onTagClick}
-            onOpenDetails={onOpenDetails}
+            onStatusChange={handleStatusChange}
+            onPriorityChange={handlePriorityChange}
+            onAssigneeChange={handleAssigneeChange}
+            onTagClick={handleTagShortcut}
+            onOpenDetails={openTicketDetails}
             currentTime={currentTime}
           />
         ))}
@@ -135,15 +149,15 @@ const TicketRow = ({
     <td className="px-6 py-3.5" onClick={(event) => event.stopPropagation()}>
       <TicketStatusSelect
         value={ticket.status}
-        onChange={(value) => onStatusChange(ticket.id, value)}
+        onChange={(value: TicketStatus) => onStatusChange(ticket.id, value)}
         className="inline-block w-32 text-[12px]"
-        selectClassName={`${statusSelectClasses} ${statusColors[ticket.status]}`}
+        selectClassName={`${statusSelectClasses} ${statusColors[ticket.status as TicketStatus]}`}
       />
     </td>
     <td className="px-6 py-3.5">
       <div className="font-medium text-gray-900 mb-0.5">{ticket.title}</div>
       <div className="flex items-center gap-2 flex-wrap">
-        {ticket.tags.map((tag) => (
+        {ticket.tags.map((tag: string) => (
           <button
             key={tag}
             type="button"
@@ -161,9 +175,9 @@ const TicketRow = ({
     <td className="px-6 py-3.5" onClick={(event) => event.stopPropagation()}>
       <TicketPrioritySelect
         value={ticket.priority}
-        onChange={(value) => onPriorityChange(ticket.id, value)}
+        onChange={(value: TicketPriority) => onPriorityChange(ticket.id, value)}
         className="inline-block w-32"
-        selectClassName={priorityColors[ticket.priority]}
+        selectClassName={priorityColors[ticket.priority as TicketPriority]}
       />
     </td>
     <td className="px-6 py-3.5">

@@ -1,6 +1,8 @@
 'use client';
 import { TicketPriority } from "@/types";
 import Modal from "@/components/ui/Modal";
+import { useToast } from "@/hooks/useToast";
+import { useTickets } from "@/hooks/useTickets";
 import { useState, type FormEvent } from "react";
 
 type CreateTicketFormValues = {
@@ -11,12 +13,6 @@ type CreateTicketFormValues = {
   description: string;
 };
 
-type CreateTicketFormProps = {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (input: CreateTicketFormValues) => void;
-};
-
 const defaultValues: CreateTicketFormValues = {
   title: "",
   requester: "",
@@ -25,24 +21,27 @@ const defaultValues: CreateTicketFormValues = {
   description: "",
 };
 
-const CreateTicketForm = ({ isOpen, onClose, onSubmit }: CreateTicketFormProps) => {
+const CreateTicketForm = () => {
+  const { isModalOpen, closeNewTicketModal, createTicket } = useTickets();
+  const { pushToast } = useToast();
   const [formValues, setFormValues] = useState(defaultValues);
 
   const resetForm = () => setFormValues(defaultValues);
 
   const handleClose = () => {
     resetForm();
-    onClose();
+    closeNewTicketModal();
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit(formValues);
+    createTicket(formValues);
+    pushToast("Ticket created successfully");
     handleClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose}>
+    <Modal isOpen={isModalOpen} onClose={handleClose}>
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">
           Create New Ticket

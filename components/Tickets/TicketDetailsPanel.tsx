@@ -1,28 +1,41 @@
+'use client';
+import { useToast } from "@/hooks/useToast";
 import TicketActivity from "./TicketActivity";
+import { useTickets } from "@/hooks/useTickets";
 import TicketStatusSelect from "./TicketStatusSelect";
+import { TicketPriority, TicketStatus } from "@/types";
 import TicketPrioritySelect from "./TicketPrioritySelect";
 import TicketAssigneeSelect from "./TicketAssigneeSelect";
-import { Ticket, TicketPriority, TicketStatus } from "@/types";
 
-type TicketDetailsPanelProps = {
-  ticket: Ticket | null;
-  isOpen: boolean;
-  teamMembers: readonly string[];
-  onClose: () => void;
-  onStatusChange: (id: string, status: TicketStatus) => void;
-  onAssigneeChange: (id: string, assignee: string | null) => void;
-  onPriorityChange: (id: string, priority: TicketPriority) => void;
-};
+const TicketDetailsPanel = () => {
+  const {
+    selectedTicket: ticket,
+    teamMembers,
+    closeTicketDetails,
+    updateTicketStatus,
+    updateTicketAssignee,
+    updateTicketPriority,
+  } = useTickets();
+  const { pushToast } = useToast();
 
-const TicketDetailsPanel = ({
-  ticket,
-  isOpen,
-  teamMembers,
-  onClose,
-  onStatusChange,
-  onAssigneeChange,
-  onPriorityChange,
-}: TicketDetailsPanelProps) => (
+  const isOpen = Boolean(ticket);
+
+  const handleStatusChange = (id: string, status: TicketStatus) => {
+    updateTicketStatus(id, status);
+    pushToast(`Status updated to ${status}`);
+  };
+
+  const handleAssigneeChange = (id: string, assignee: string | null) => {
+    updateTicketAssignee(id, assignee);
+    pushToast(assignee ? `Assigned to ${assignee}` : "Ticket unassigned");
+  };
+
+  const handlePriorityChange = (id: string, priority: TicketPriority) => {
+    updateTicketPriority(id, priority);
+    pushToast(`Priority updated to ${priority}`);
+  };
+
+  return (
   <div
     className={`fixed inset-y-0 right-0 w-full md:w-[480px] bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300 ease-in-out z-40 flex flex-col ${
       isOpen ? "translate-x-0" : "translate-x-full"
@@ -36,7 +49,7 @@ const TicketDetailsPanel = ({
             <span className="text-gray-300">/</span>
             <TicketStatusSelect
               value={ticket.status}
-              onChange={(value) => onStatusChange(ticket.id, value)}
+              onChange={(value) => handleStatusChange(ticket.id, value)}
               className="-ml-2 inline-block"
               selectClassName="bg-transparent border-none text-sm font-medium text-gray-900 focus:ring-0 cursor-pointer hover:bg-gray-50 rounded px-2 py-1"
             />
@@ -46,7 +59,7 @@ const TicketDetailsPanel = ({
               <i className="fa-solid fa-ellipsis" />
             </button>
             <button
-              onClick={onClose}
+              onClick={closeTicketDetails}
               className="w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 text-gray-500 transition"
             >
               <i className="fa-solid fa-xmark" />
@@ -78,7 +91,7 @@ const TicketDetailsPanel = ({
                 <TicketAssigneeSelect
                   value={ticket.assignee}
                   options={teamMembers}
-                  onChange={(value) => onAssigneeChange(ticket.id, value)}
+                  onChange={(value) => handleAssigneeChange(ticket.id, value)}
                   className="w-48"
                 />
               </div>
@@ -89,7 +102,7 @@ const TicketDetailsPanel = ({
                 <TicketPrioritySelect
                   className="w-32"
                   value={ticket.priority}
-                  onChange={(value) => onPriorityChange(ticket.id, value)}
+                  onChange={(value) => handlePriorityChange(ticket.id, value)}
                 />
               </div>
             </div>
@@ -121,6 +134,7 @@ const TicketDetailsPanel = ({
       </div>
     )}
   </div>
-);
+  );
+};
 
 export default TicketDetailsPanel;

@@ -1,23 +1,26 @@
 'use client';
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { toastStore } from "@/store/toastStore";
 
 export const useToast = () => {
-    const [message, setMessage] = useState<string | null>(null);
+  const message = useSyncExternalStore(
+    toastStore.subscribe.bind(toastStore),
+    toastStore.getMessage.bind(toastStore)
+  );
 
-    const pushToast = useCallback((text: string) => {
-        setMessage(text);
-    }, []);
+  const pushToast = (text: string) => {
+    toastStore.setMessage(text);
+  };
 
-    const dismissToast = useCallback(() => {
-        setMessage(null);
-    }, []);
+  const dismissToast = () => {
+    toastStore.setMessage(null);
+  };
 
-    useEffect(() => {
-        if (!message) return;
-        const timeout = setTimeout(() => setMessage(null), 3000);
-        return () => clearTimeout(timeout);
-    }, [message]);
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(() => toastStore.setMessage(null), 3000);
+    return () => clearTimeout(timeout);
+  }, [message]);
 
-    return { message, pushToast, dismissToast };
+  return { message, pushToast, dismissToast };
 };
-

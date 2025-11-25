@@ -1,11 +1,10 @@
 'use client';
 
-type NotificationToastProps = {
-  message: string | null;
-  onDismiss: () => void;
-};
+import { useToast } from "@/hooks/useToast";
 
-const NotificationToast = ({ message, onDismiss }: NotificationToastProps) => {
+const NotificationToast = () => {
+  const { message, dismissToast } = useToast();
+  
   if (!message) return null;
 
   return (
@@ -13,7 +12,7 @@ const NotificationToast = ({ message, onDismiss }: NotificationToastProps) => {
       <i className="fa-solid fa-circle-check text-green-400" />
       <span>{message}</span>
       <button
-        onClick={onDismiss}
+        onClick={dismissToast}
         className="text-gray-400 hover:text-white transition"
         aria-label="Dismiss notification"
       >
